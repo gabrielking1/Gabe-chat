@@ -1,0 +1,176 @@
+
+
+
+{% load crispy_forms_tags %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/asset/src/css/iziToast.css">
+    <link rel="stylesheet" href="/static/asset/src/css/iziToast.min.css">
+    <script src="/static/asset/src/js/iziToast.js" type="text/javascript"></script>
+    <script src="/static/asset/src/js/iziToast.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="/static/asset/src/css/animations.styl">
+
+<link rel="stylesheet" href="/static/asset/src/css/layouts.styl">
+<link rel="stylesheet" href="/static/asset/src/css/style.styl">
+<link rel="stylesheet" href="/static/asset/src/css/themes.styl">
+
+<link rel="stylesheet" href="/static/asset/src/css/toast.styl">
+    <title>Stitch!</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .login-container {
+            max-width: 400px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .login-form {
+            padding: 20px;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .login-form p {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+      
+        alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-success {
+            color: white;
+            background-color: #4CAF50 ;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-info {
+            color: white;
+            background-color: #ff9800;
+            border-color: #bee5eb;
+        }
+        
+        .alert-warning {
+            color: black;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        
+        .alert-danger {
+            color: white;
+            background-color: #f44336;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+  
+  <div class ="container">
+    <h1> Welcome to Stitch </h1>
+    <h3> Login Here! </h3>
+    {% if messages %}
+    {% for message in messages %}
+        <script>
+            var messageType = "{{ message.tags }}";
+            var backgroundColor, messageColor;
+            if (messageType === "error") {
+                backgroundColor = "#ff0000"; // Red color for error messages
+                messageColor = "white"; // White color for message text
+            } else if (messageType === "success") {
+                backgroundColor = "#4CAF50"; // Green color for success messages
+                messageColor = "white"; // White color for message text
+            } else if (messageType === "info") {
+                backgroundColor = #65B1D0"; // Green color for success messages
+                messageColor = "white"; // White color for message text
+            } else {
+                backgroundColor = "#000000"; // Default color
+                messageColor = "black"; // Black color for message text
+            }
+
+            iziToast.show({
+               
+                message: '{{ message }}',
+                position: 'topCenter',
+                timeout: 5000,
+                transitionIn: 'bounceInUp',
+                transitionOut: 'flipOutX',
+                backgroundColor: backgroundColor, // Set background color based on message type
+                messageColor: messageColor, // Set message color
+                messageSize: '18',
+            });
+        </script>
+    {% endfor %}
+{% endif %}
+
+
+      <form method="post" action = "/login/" class="form-group">
+          {% csrf_token %}
+          {{form|crispy}}
+          <div>
+          <input class="form group" type="submit" value="login here"/>
+          </div>
+      </form>
+      <p>Don't have an account? <a href="/started/">Get Started</a><br></p>
+        request new link  </a><br></p>
+        <p>forget password? <a href = "/password_reset/"> reset here </a></p>
+  </div>
+
+  
+  
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
+
+

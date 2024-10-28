@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Messages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* General styles for chat messages */
+        #messages-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chat-body {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            height: 500px; /* Adjust height as needed */
+            overflow-y: scroll; /* Add scroll for long conversations */
+        }
+
+        .message-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 15px;
+            max-width: 80%;
+            position: relative;
+            display: inline-block;
+        }
+
+        .receive {
+            background-color: #ffffff;
+            float: left;
+            clear: both;
+            text-align: left;
+            margin-right: 20px;
+        }
+
+        .send {
+            background-color: #dcf8c6;
+            float: right;
+            clear: both;
+            text-align: right;
+            margin-left: 20px;
+        }
+
+        .message-text {
+            color: #000;
+            margin: 0;
+        }
+
+        /* Adding triangle for chat bubble */
+        .receive::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            border: 10px solid transparent;
+            border-right-color: #ffffff;
+            border-left: 0;
+            margin-top: -10px;
+        }
+
+        .send::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: -10px;
+            border: 10px solid transparent;
+            border-left-color: #dcf8c6;
+            border-right: 0;
+            margin-top: -10px;
+        }
+        .typing-indicator {
+            font-style: italic;
+            color: #888;
+            margin-top: 10px;
+        }
+
+
+        /* Modal styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#propose-offer-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+#counter-offer-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Messages for Order {{ order.id }}</h1>
+        <ul id="messages-list">
+            <div class="chat-body" id="tasks">
+                <!-- Received messages and displayed here -->
+                {% for i in messages reversed %}
+                    <div class="message-item {% if i.sender != user %}receive{% else %}send{% endif %}">
+                        <p class="message-text">{{ i.message }}{% if i.sender != user %}<strong>- {{ i.sender.username }}</strong>{% endif %}</p>
+                    </div>
+                {% endfor %}
+                <!-- End received messages -->
+            </div>
+        </ul>
+        
+        <form id="message-form" method="post">
+            <div id="typing-indicator" class="typing-indicator" style="display: none;"></div>
+            {% csrf_token %}
+            {% if request.user == order.store.vendor%}
+            <input type="hidden" id="receiver" value="{{ order.user.id }}">\
+            {%endif%}
+            {%if request.user == order.user%}
+            <input type="hidden" id="receiver" value="{{ order.store.vendor.id }}">
+            {%endif%}
+            <div class="form-group">
+                <textarea id="message" name="message" rows="3" placeholder="Type your message here..."></textarea>
+            </div>
+            {% if request.user == order.store.vendor and order.price is None and order.proposed_price is None%}
+            <button id="propose-offer-btn">Propose Offer</button>
+            {%endif%}
+            {%if request.user == order.store.vendor and order.price is None and order.proposed_price is not None and order.counter_offer is True %}
+            <button id="counter-offer-btn">Get Offer</button>
+            
+
+            
+            {%endif%}
+            {% if request.user == order.user and order.proposed_price is not None and order.price is None %}
+            <button id="accept-order-btn">Accept Offer</button>
+            {%endif%}
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+
+
+    <div id="propose-offer-modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="propose-offer-close">&times;</span>
+            <h2>Propose Offer</h2>
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+
+                {% csrf_token %}
+                <label for="offer-amount">Offer Amount:</label>
+                <input type="number" name ="proposed" id="offer-amount" step="1.00" required>
+                <input type="checkbox" class="form-check-input" id="exampleCheck1" name="counter">
+                <label class="form-check-label" for="exampleCheck1" name="counter">counter</label>
+                <button type="submit">make Offer</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="counter-offer-modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="counter-offer-close">&times;</span>
+            <h2>Propose Offer is {{order.proposed_price}}</h2>
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+
+                {% csrf_token %}
+                <input type="number" name ="accept_customer_proposed" id="offer-amount" step="1.00"  value="{{order.proposed_price}}" hidden>
+                <button type="submit">Accept Offer</button>
+            </form>
+            <br>
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+
+                {% csrf_token %}
+                <input type="number" name ="reject_customer_proposed" id="offer-amount" step="1.00"  value="{{order.proposed_price}}" hidden>
+                <button type="submit" style="background-color:red">Reject Offer</button>
+            </form>
+        </div>
+    </div>
+
+
+
+
+    <div id="accept-order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>{{order.product.name}}</h2>
+            <h3>{{order.proposed_price}}</h3>
+            <h2> status : pending </h2>
+            
+            <br>
+
+            {% if order.counter_offer is True %}
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+                {% csrf_token %}
+                <input type="number" name="counter_proposed" id="offer-amount" step="0.01" 
+           placeholder="{{ order.proposed_price }}">
+                <button type="submit">Counter offer</button>
+            </form>
+            <br>
+            {%else%}
+            <br>
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+                {% csrf_token %}
+                <input type="number" name="accept_proposed" id="offer-amount" step="0.01" 
+           value="{{ order.proposed_price }}" readonly hidden>
+                <button type="submit">Accept Offer</button>
+            </form>
+            <br>
+            <form  method="POST" action="{% url 'confirm' order.id %}">
+                {% csrf_token %}
+                <label for="accept-notes">Proposed offer:</label>
+                <input type="number" name="declined_proposed" id="offer-amount" step="0.01" 
+           value="{{ order.proposed_price }}" readonly hidden>
+                <button type="submit">Decline offer</button>
+            </form>
+            {%endif%}
+
+            
+        </div>
+    </div>
+    
+
+
+
+    <script>
+        const websocketProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const orderId = "{{ order.id }}";  // Make sure this is properly rendered in the HTML context
+        const wsEndpoint = `${websocketProtocol}://${window.location.host}/ws/order/${orderId}/`;
+    
+        const socket = new WebSocket(wsEndpoint);
+    
+        // Handle incoming messages
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+    
+            if (data.type === 'message') {
+                // Display the received message
+                const messageElement = document.createElement('div');
+                messageElement.className = `message-item ${data.sender === "{{ user.id }}" ? 'send' : 'receive'}`;
+                messageElement.innerHTML = `
+                    <p class="message-text">${data.message}</p>
+                `;
+                document.querySelector('.chat-body').appendChild(messageElement);
+                document.querySelector('.chat-body').scrollTop = document.querySelector('.chat-body').scrollHeight; // Scroll to bottom
+            } else if (data.type === 'typing') {
+                // Display typing notification
+                const typingIndicator = document.getElementById('typing-indicator');
+                typingIndicator.innerText = `${data.sender_username} is typing...`;
+                typingIndicator.style.display = 'block';
+    
+                // Hide typing indicator after 1.5 seconds
+                clearTimeout(window.typingTimeout);
+                window.typingTimeout = setTimeout(() => {
+                    typingIndicator.style.display = 'none';
+                }, 1500);
+            }
+        };
+    
+        document.getElementById('message-form').onsubmit = function(e) {
+            e.preventDefault();
+            const messageInput = document.getElementById('message');
+            const messageContent = messageInput.value;
+            const senderId = "{{ user.id }}";
+            const receiverId = document.getElementById('receiver').value;
+    
+            // Send message
+            socket.send(JSON.stringify({
+                'message': messageContent,
+                'sender': senderId,
+                'receiver': receiverId,
+                'typing': false
+            }));
+    
+            messageInput.value = '';
+        };
+    
+        document.getElementById('message').addEventListener('input', function() {
+            const senderId = "{{ user.id }}";
+            const receiverId = document.getElementById('receiver').value;
+    
+            // Notify server that user is typing
+            socket.send(JSON.stringify({
+                'typing': true,
+                'sender': senderId,
+                'receiver': receiverId
+            }));
+        });
+    
+        // Initialize typing timeout
+        window.typingTimeout = null;
+    </script>
+    
+    <script>
+        // Get modal elements for both offer and accept
+        const acceptOrderModal = document.getElementById('accept-order-modal');
+        const acceptOrderBtn = document.getElementById('accept-order-btn');
+        const closeAcceptOrderModalBtn = acceptOrderModal.querySelector('.close-btn');
+        const acceptOrderForm = document.getElementById('accept-order-form');
+    
+        // Open accept order modal when "Accept Order" button is clicked
+        acceptOrderBtn.onclick = function() {
+            acceptOrderModal.style.display = 'block';
+        }
+    
+        // Close accept order modal when "x" is clicked
+        closeAcceptOrderModalBtn.onclick = function() {
+            acceptOrderModal.style.display = 'none';
+        }
+    
+        // Close accept order modal when clicking outside of the modal
+        window.onclick = function(event) {
+            if (event.target === acceptOrderModal) {
+                acceptOrderModal.style.display = 'none';
+            }
+        }
+    
+        // Handle accept order form submission
+        acceptOrderForm.onsubmit = function(e) {
+            e.preventDefault();
+    
+            const notes = document.getElementById('accept-notes').value;
+            const senderId = "{{ user.id }}";  // Assuming the sender is the current user
+            const receiverId = document.getElementById('receiver').value;  // Assuming the receiver is known
+    
+            // Send accept order notification to the WebSocket server
+            socket.send(JSON.stringify({
+                'accept_order': true,
+                'sender': senderId,
+                'receiver': receiverId,
+                'notes': notes,
+                'type': 'accept'
+            }));
+    
+            // Close the modal
+            acceptOrderModal.style.display = 'none';
+        };
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const proposeOfferBtn = document.getElementById('propose-offer-btn');
+            const proposeOfferModal = document.getElementById('propose-offer-modal');
+            const proposeOfferClose = document.getElementById('propose-offer-close');
+    
+            proposeOfferBtn.addEventListener('click', function() {
+                proposeOfferModal.style.display = 'block';
+            });
+    
+            proposeOfferClose.addEventListener('click', function() {
+                proposeOfferModal.style.display = 'none';
+            });
+    
+            window.addEventListener('click', function(event) {
+                if (event.target === proposeOfferModal) {
+                    proposeOfferModal.style.display = 'none';
+                }
+            });
+    
+            document.getElementById('propose-offer-form').onsubmit = function(e) {
+                e.preventDefault();
+                const offerAmount = document.getElementById('offer-amount').value;
+    
+                // Add your logic to handle the offer submission here, e.g., sending data to the server
+    
+                // Close the modal
+                proposeOfferModal.style.display = 'none';
+            };
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const proposeOfferBtn = document.getElementById('counter-offer-btn');
+            const proposeOfferModal = document.getElementById('counter-offer-modal');
+            const proposeOfferClose = document.getElementById('counter-offer-close');
+    
+            proposeOfferBtn.addEventListener('click', function() {
+                proposeOfferModal.style.display = 'block';
+            });
+    
+            proposeOfferClose.addEventListener('click', function() {
+                proposeOfferModal.style.display = 'none';
+            });
+    
+            window.addEventListener('click', function(event) {
+                if (event.target === proposeOfferModal) {
+                    proposeOfferModal.style.display = 'none';
+                }
+            });
+    
+            document.getElementById('propose-offer-form').onsubmit = function(e) {
+                e.preventDefault();
+                const offerAmount = document.getElementById('offer-amount').value;
+    
+                // Add your logic to handle the offer submission here, e.g., sending data to the server
+    
+                // Close the modal
+                proposeOfferModal.style.display = 'none';
+            };
+        });
+    </script>
+    
+</body>
+</html>
